@@ -13,7 +13,7 @@ import matplotlib.colors as mcolors
 plt.rcParams["figure.figsize"]=20,10
 
 class SMTGuitar:
-    def __init__(self, root = data_root):
+    def __init__(self, root):
         # Dataset root folder
         self.root = root 
         self.root_dir = self.root + "IDMT-SMT-GUITAR/"
@@ -217,6 +217,7 @@ class SMTGuitar:
 
         for idx, row in self.df.iterrows():
             st = np.apply_along_axis(lambda x: 1*np.logical_or.reduce(x), 0, row['transcript'][bool_mask, :])
+            st = np.vstack((row['transcript'][no_idx, :], st))
             self.df['transcript_simple'][idx] = st
             exp_obj = {'NO': row['num_exp']['NO'], 'EXP': 0}
             for e in exp_keys:
@@ -294,22 +295,20 @@ class SMTGuitar:
     def save_data(self, name='smt_guitar.pkl', path=None):
         loc = './' if not path else path 
         file = loc+name
-        smt_guitar.df.to_pickle(file)
+        self.df.to_pickle(file)
         
     def load_data(self, name='smt_guitar.pkl', path=None):
         loc = './' if not path else path 
         file = loc+name
-        print(file)
         if os.path.isfile(file):
-            print('Is file')
             with open(file, "rb") as f:
                 try:
-                    self.df = pd.read_pickle(file)
-                    print('Load pickle')
-                    return True, self.df
+                        self.df = pd.read_pickle(file)
+                        print('Data loaded successfully')
+                        return True, self.df
                 except Exception: 
-                    print('Except!')
-                    pass
+                        print('Could not load data')
+                        pass
         return False, self.df
                        
         
@@ -323,6 +322,9 @@ class SMTGuitar:
         exp_type = 'num_exp_simple' if simple else 'num_exp'
 
         colors = list(mcolors.TABLEAU_COLORS.keys()) + list(mcolors.BASE_COLORS.keys())
+        
+        signals = []
+
         timeline = np.arange(0, lick['len'], 1)
 
         norm_samples = lick['samples']
@@ -335,9 +337,9 @@ class SMTGuitar:
         signals.append(s_samples)
 
         for i, exp in enumerate(lick[exp_type].keys()):
-            annot = {'name': exp, 'x': timeline,
+                annot = {'name': exp, 'x': timeline,
                      'y': 2*lick[transcript_type][i]-1, 'color': colors[i], 'linewidth':2}
-            signals.append(annot)
+                signals.append(annot)
 
         fig, ax = plt.subplots()
         for signal in signals:
