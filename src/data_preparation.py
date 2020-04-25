@@ -353,3 +353,16 @@ class SMTGuitar:
         ax.set_title(lick['name'])
         plt.show()
 
+def get_clip_labels(data, exp):
+    label_df = data.filter(['name'], axis=1)
+    new_cols = list(exp.values())
+    label_df = pd.concat([label_df, pd.DataFrame(columns=new_cols)])
+    label_df['one_hot'] = None
+
+    for idx, row in data.iterrows():
+        one_hot = list(map(lambda x: int(x != 0), row['num_exp'].values()))
+        label_df['one_hot'][idx] = one_hot
+        for e in row['num_exp']:
+            label_df[exp[e]][idx] = row['num_exp'][e]
+    
+    return label_df
