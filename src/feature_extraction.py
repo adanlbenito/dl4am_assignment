@@ -42,5 +42,5 @@ def zero_pad_spectrograms(mel_spectrograms, window_sizes=[512, 1024, 2048, 4096,
             padded_s = np.pad(s, ((0, max_spec_size-s.shape[0]), (0, 0)), 'constant')
             mel_spec[i] = padded_s
 
-        spectrograms.append(pd.DataFrame(mel_spec, columns=['spectrogram']))
+        spectrograms.append(pd.DataFrame(mel_spec))
     return spectrograms
