@@ -2,6 +2,7 @@ import librosa
 import numpy as np
 import pandas as pd
 import math
+from sklearn.preprocessing import StandardScaler
 
 def compute_mel_spectrograms(data, window_sizes=[512, 1024, 2048, 4096, 8192, 16384], 
     hop_size=512, new_fs=16000, n_mels=128):
@@ -21,9 +22,11 @@ def compute_mel_spectrograms(data, window_sizes=[512, 1024, 2048, 4096, 8192, 16
             mel_spec = librosa.feature.melspectrogram(y=re_samples, sr=new_fs,
                                                     n_fft=w, 
                                                     hop_length=hop_size,
-                                                    n_mels=n_mels
+                                                    n_mels=n_mels,
+                                                    power=1
                                                     ).T
-            mel_spec = np.log(1+10000*mel_spec)
+            #mel_spec = np.log(1+10000*mel_spec)
+            mel_spec = librosa.amplitude_to_db(mel_spec, ref=np.max)
             mel_df[str(w)][idx] = mel_spec
 
     mel_df.reset_index(drop=True)
@@ -44,3 +47,20 @@ def zero_pad_spectrograms(mel_spectrograms, window_sizes=[512, 1024, 2048, 4096,
 
         spectrograms.append(pd.DataFrame(mel_spec))
     return spectrograms
+
+def standardize_spectrogram(spectrogram, scaler=None):
+    spec = np.apply_along_axis(lambda x: x[0], 1, spectrogram.values)
+    s_shape =  spec.shape
+    spec = np.reshape(spec,(-1, s_shape[2]))
+    if scaler is None:
+        scaler = StandardScaler().fit(spec)
+    s_scaled = scaler.transform(spec)
+    s_scaled = np.reshape(s_scaled, s_shape)
+    return s_scaled, scaler
+
+
+def prepare_input_dimensions(spectrogram):
+    spec = np.expand_dims(spectrogram, axis=0)
+    s_shape = spec.shape
+    spec = np.reshape(spec,(s_shape[1], s_shape[3], s_shape[2], s_shape[0]))
+    return spec
