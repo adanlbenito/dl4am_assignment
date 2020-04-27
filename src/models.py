@@ -17,7 +17,7 @@ class EarlyConvolution:
         self.activation=activation
         self.padding_conv='same'
         self.input_layer=input_layer
-        self.pooling=(1, int(0.5*self.filter_length))
+        self.pooling=(int(0.5*self.filter_length), 1)
         self.output_layer=None
         self.trainable=True
         self.layers_df=pd.DataFrame(columns=['type', 'layer'])
