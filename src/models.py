@@ -159,6 +159,8 @@ class Classifier:
         self.layers_df = self.layers_df.append({'type': 'Activation' , 'layer': cl_sigmoid_l}, ignore_index=True)
         
         self.output_layer = cl_sigmoid_l
+
+
         return cl_sigmoid_l
         
 
