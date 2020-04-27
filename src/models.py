@@ -56,7 +56,7 @@ class LateConvolution:
 
         for l in input_layers:
             self.layers_df = self.layers_df.append({'type': 'Input' , 'layer': l}, ignore_index=True)
-            
+
     def define_layers(self):
         conv_input=None 
         if len(self.input_layers) > 1:
@@ -65,12 +65,11 @@ class LateConvolution:
             conv_input=concatenate
             self.layers_df = self.layers_df.append({'type': 'Concatenate' , 'layer': concatenate}, ignore_index=True)
         else:
-            conv_input=self.input_layers[0]
-        
+
         lc_conv_1 = Conv2D(filters = self.n_filters[0], kernel_size = (1, 1), strides=self.strides, padding=self.padding_conv, activation=self.activation, name=self.name+'lc_conv_1', data_format='channels_last')(conv_input)
         lc_dropout_1 = Dropout(self.dropout)(lc_conv_1) 
 
-    
+
         lc_conv_2 = Conv2D(filters = self.n_filters[1], kernel_size = (1, 1), strides=self.strides, padding=self.padding_conv, activation=self.activation, name=self.name+'lc_conv_2', data_format='channels_last')(lc_dropout_1)
         lc_dropout_2 = Dropout(self.dropout)(lc_conv_2) 
 
@@ -102,15 +101,15 @@ class Recurrent:
         self.ouput_layer=None
 
     def define_layers(self):
-#        re_permute = Permute((2, 1, 3), name='permute')(self.input_layer)
+        #        re_permute = Permute((2, 1, 3), name='permute')(self.input_layer)
         re_reshape = Reshape((self.seq_len, -1), name='reshape')(self.input_layer)
         re_gru_1 = Bidirectional(
-            GRU(self.rnn_dim, activation='tanh', dropout=self.dropout, recurrent_dropout=self.dropout, return_sequences=True, name='gru_1'), merge_mode='mul'
-        )(re_reshape)
+                GRU(self.rnn_dim, activation='tanh', dropout=self.dropout, recurrent_dropout=self.dropout, return_sequences=True, name='gru_1'), merge_mode='mul'
+                )(re_reshape)
         re_gru_2 = Bidirectional(
-            GRU(self.rnn_dim, activation='tanh', dropout=self.dropout, recurrent_dropout=self.dropout, return_sequences=True, name='gru_2'), merge_mode='mul'
-        )(re_gru_1)
-        
+                GRU(self.rnn_dim, activation='tanh', dropout=self.dropout, recurrent_dropout=self.dropout, return_sequences=True, name='gru_2'), merge_mode='mul'
+                )(re_gru_1)
+
         re_dense_1 = TimeDistributed(Dense(self.n_classes, name='re_dense_1'))(re_gru_1)
         re_relu_l= Activation('relu', name='re_relu_l')(re_dense_1)
         re_drop_l = Dropout(self.dropout)(re_relu_l)
@@ -131,7 +130,7 @@ class Recurrent:
         self.output_layer = re_sigmoid_l
 
         return re_sigmoid_l
-  
+
 class Classifier:
     def __init__(self, input_layer, name='', dense_dim=32, dropout=0.5, n_classes=6):
         self.name=name
@@ -157,11 +156,67 @@ class Classifier:
         self.layers_df = self.layers_df.append({'type': 'Dense' , 'layer': cl_dense_2}, ignore_index=True)
         self.layers_df = self.layers_df.append({'type': 'Dense' , 'layer': cl_dense_3}, ignore_index=True)
         self.layers_df = self.layers_df.append({'type': 'Activation' , 'layer': cl_sigmoid_l}, ignore_index=True)
-        
+
         self.output_layer = cl_sigmoid_l
 
 
         return cl_sigmoid_l
-        
+
+class MyModel:
+    def __init__(self, input_shape, windows=[512, 1024, 2048, 4096, 8192, 16384], dropout=0.5, strong=False):
+        self.input_shape=input_shape
+        self.windows = windows
+        self.dropout=dropout
+        self.n_feat = input_shape[0]
+        self.n_frames = input_shape[1]
+        self.strong=False
+        self.struct={
+            'ec': None,
+            'lc': None,
+            're':None,
+            'cl': None,
+            }
+        self.layers={
+            'in': None,
+            'ec_out': None,
+            'lc_out': None,
+            're_out': None,
+            'cl_out': None
+            }
+        self.model_weak=None
+        self.model_strong=None
+
+    def define_layers(self):
+        # Inputs
+        self.layers['in'] = []
+        for i, ts in enumerate(self.windows):
+            i_name = 'input_'+str(i)
+            self.layers['in'].append(Input(self.input_shape, name=i_name))
+
+        # Early Convolutions
+        self.struct['ec'] = []
+        self.layers['ec_out']  = []
+        for idx, inpt in enumerate(self.layers['in']):
+            self.struct['ec'].append(EarlyConvolution(inpt, name=str(ws[idx])+'_'))
+            self.struct['ec'][idx].define_layers()
+            self.layers['ec_out'].append(self.struct['ec'][idx].output_layer)
+
+        # Late Convolutions
+        self.struct['lc'] = LateConvolution(input_layers=self.layers['ec_out'], dropout=self.dropout)
+        self.layers['lc_out'] = self.struct['lc'].define_layers()
+
+        # Recurrent
+        self.struct['re'] = Recurrent(input_layer=self.layers['lc_out'], seq_len=self.n_frames, dropout=self.dropout)
+        self.layers['re_out'] = self.struct['re'].define_layers()
+
+        # Classifier
+        self.struct['cl'] = Classifier(input_layer=self.layers['re_out'], dropout=self.dropout)
+        self.layers['cl_out'] = self.struct['cl'].define_layers()
+
+    def get_model(self):
+        if self.strong:
+            return Model(inputs=self.layers['in'], outputs=self.layers['re_out'])
+        else:
+            return Model(inputs=self.layers['in'], outputs=self.layers['cl_out'])
 
 
