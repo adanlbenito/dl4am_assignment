@@ -366,3 +366,15 @@ def get_clip_labels(data, exp):
             label_df[exp[e]][idx] = row['num_exp'][e]
     
     return label_df
+
+def get_one_hot_labels(label_df):
+    one_hot = np.vstack(label_df['one_hot'].values)
+    weights = get_classes_weights(one_hot)
+    return one_hot, weights
+
+    
+def get_classes_weights(one_hot_labels):
+    n_samples = one_hot_labels.shape[0]
+    n_classes = one_hot_labels.shape[1]
+    weights = n_samples / (n_classes * np.sum(one_hot_labels, axis=0))
+    return weights
