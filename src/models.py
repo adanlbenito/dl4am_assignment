@@ -198,7 +198,7 @@ class MyModel:
         self.struct['ec'] = []
         self.layers['ec_out']  = []
         for idx, inpt in enumerate(self.layers['in']):
-            self.struct['ec'].append(EarlyConvolution(inpt, name=str(ws[idx])+'_'))
+            self.struct['ec'].append(EarlyConvolution(inpt, name=str(self.windows[idx])+'_'))
             self.struct['ec'][idx].define_layers()
             self.layers['ec_out'].append(self.struct['ec'][idx].output_layer)
 
