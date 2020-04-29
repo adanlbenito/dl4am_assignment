@@ -65,6 +65,7 @@ class LateConvolution:
             conv_input=concatenate
             self.layers_df = self.layers_df.append({'type': 'Concatenate' , 'layer': concatenate}, ignore_index=True)
         else:
+            conv_input=self.input_layers[0]
 
         lc_conv_1 = Conv2D(filters = self.n_filters[0], kernel_size = (1, 1), strides=self.strides, padding=self.padding_conv, activation=self.activation, name=self.name+'lc_conv_1', data_format='channels_last')(conv_input)
         lc_dropout_1 = Dropout(self.dropout)(lc_conv_1) 
