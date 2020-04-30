@@ -1,5 +1,5 @@
 import numpy as np
-import utils
+import dcase17.utils
 #####################
 # Scoring functions
 #
