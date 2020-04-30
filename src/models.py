@@ -61,7 +61,7 @@ class LateConvolution:
         conv_input=None 
         if len(self.input_layers) > 1:
             inputs = []
-            concatenate = keras_layers.concatenate(self.input_layers, axis=0)
+            concatenate = keras_layers.concatenate(self.input_layers, axis=-1)
             conv_input=concatenate
             self.layers_df = self.layers_df.append({'type': 'Concatenate' , 'layer': concatenate}, ignore_index=True)
         else:
