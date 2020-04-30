@@ -64,7 +64,7 @@ def zero_pad_spectrograms(mel_spectrograms, window_sizes=[512, 1024, 2048, 4096,
             spectrograms.append(mel_spec)
     return spectrogram
 
-def get_max_len(x_train, x_test):
+def get_max_len(x_train, x_test, n_train_f, n_test_f):
     file_len_train = []
     file_len_test = []
     for i in range(len(x_train)):
