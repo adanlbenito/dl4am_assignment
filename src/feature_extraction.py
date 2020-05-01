@@ -17,7 +17,7 @@ def compute_mel_spectrograms(data, window_sizes=[512, 1024, 2048, 4096, 8192, 16
     for idx, row in data.iterrows():
         samples = row['samples']
         fs = row['fs']
-        re_samples = librosa.resample(samples, fs, 16000)
+        re_samples = librosa.resample(samples, fs, new_fs)
         for w in window_sizes:
             mel_spec = librosa.feature.melspectrogram(y=re_samples, sr=new_fs,
                                                     n_fft=w, 
